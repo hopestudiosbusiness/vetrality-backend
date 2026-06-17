@@ -13,10 +13,11 @@ export default async function handler(req, res) {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) return res.status(500).json({ error: "Stripe non configurato." });
 
-  // I prezzi creati nel cruscotto Stripe (Price ID), messi come variabili su Vercel
+  // I prezzi creati nel cruscotto Stripe (Price ID), messi come variabili su Vercel.
+  // Il frontend invia plan = "base" per il piano Pro (29€) e plan = "pro" per Business (59€).
   const PRICES = {
-    base: process.env.STRIPE_PRICE_BASE,
-    pro: process.env.STRIPE_PRICE_PRO,
+    base: process.env.STRIPE_PRICE_PRO,        // piano Pro — 29€/mese
+    pro: process.env.STRIPE_PRICE_BUSINESS,    // piano Business — 59€/mese
   };
 
   try {
