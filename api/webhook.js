@@ -73,5 +73,28 @@ export default async function handler(req, res) {
     }
   }
 
+  // L'abbonamento è stato cancellato (disdetta, o pagamenti falliti esauriti dopo i tentativi di Stripe):
+  // riportiamo l'utente al piano gratis. Cerchiamo per stripe_customer_id (non per email,
+  // che qui non è sempre disponibile nell'oggetto subscription).
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object;
+    const customerId = sub.customer;
+    if (customerId) {
+      try {
+        const resp = await fetch(`${supabaseUrl}/rest/v1/profiles?stripe_customer_id=eq.${encodeURIComponent(customerId)}`, {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseServiceKey,
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({ plan: "gratis", updated_at: new Date().toISOString() }),
+        });
+        if (!resp.ok) console.error("Supabase downgrade fallito:", await resp.text());
+      } catch (e) { console.error("Errore downgrade Supabase:", e); }
+    }
+  }
+
   return res.status(200).json({ received: true });
 }
